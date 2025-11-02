@@ -6,7 +6,6 @@ import requests
 import re
 import smtplib
 from email.message import EmailMessage
-from io import BytesIO
 
 # ---------------------------------------------------------
 # PAGE CONFIG
@@ -41,21 +40,22 @@ STATUS_OPTIONS = [
 ]
 
 # ---------------------------------------------------------
-# LINKS to your store (we browsed the site to take these)  🌸
-# Root & Heart & Crown & Third Eye are 100% from the site
-# Others follow the same URL pattern on myaurabliss.com
-# Source: myaurabliss.com product-category chakra pages
-# :contentReference[oaicite:0]{index=0}
+# CLEANER (very important for FPDF)
 # ---------------------------------------------------------
-CHAKRA_LINKS = {
-    "Root (Muladhara)": "https://myaurabliss.com/product-category/chakra/root-chakra/",
-    "Sacral (Svadhisthana)": "https://myaurabliss.com/product-category/chakra/sacral-chakra/",
-    "Solar Plexus (Manipura)": "https://myaurabliss.com/product-category/chakra/solar-plexus-chakra/",
-    "Heart (Anahata)": "https://myaurabliss.com/product-category/chakra/heart-chakra/",
-    "Throat (Vishuddha)": "https://myaurabliss.com/product-category/chakra/throat-chakra/",
-    "Third Eye (Ajna)": "https://myaurabliss.com/product-category/chakra/third-eye-chakra/",
-    "Crown (Sahasrara)": "https://myaurabliss.com/product-category/chakra/crown-chakra/",
-}
+def clean_txt(text: str) -> str:
+    if not text:
+        return ""
+    # replace common unicode with ascii
+    text = text.replace("•", "- ")
+    text = text.replace("–", "-")
+    text = text.replace("—", "-")
+    text = text.replace("’", "'")
+    text = text.replace("‘", "'")
+    text = text.replace("“", '"')
+    text = text.replace("”", '"')
+    # remove stray non-latin chars
+    text = re.sub(r"[^\x00-\xFF]", "", text)
+    return text
 
 # ---------------------------------------------------------
 # PREDEFINED NOTES / REMEDIES
@@ -71,8 +71,8 @@ PREDEFINED_INFO = {
             "remedies": "Walk barefoot, chant LAM, Root Reiki healing, safety affirmations."
         },
         "Blocked / Underactive": {
-            "notes": "Chronic fear, financial instability, or low energy in legs/lower back.",
-            "remedies": "Red color therapy, money forgiveness ritual, Ho’oponopono for parents."
+            "notes": "Chronic fear, financial instability, or low energy in legs or lower back.",
+            "remedies": "Red color therapy, money forgiveness ritual, Ho'oponopono for parents."
         },
         "Overactive / Dominant": {
             "notes": "Control tendencies, anger bursts, attachment to material comfort.",
@@ -85,34 +85,34 @@ PREDEFINED_INFO = {
             "remedies": "Dance therapy, water visualization, orange candle meditation."
         },
         "Slightly Weak": {
-            "notes": "Mild guilt or emotional up/down in relationships.",
-            "remedies": "Ho’oponopono for past partners, sacral journaling, forgiveness rituals."
+            "notes": "Mild guilt or emotional ups and downs in relationships.",
+            "remedies": "Ho'oponopono for past partners, sacral journaling, forgiveness rituals."
         },
         "Blocked / Underactive": {
-            "notes": "Suppressed emotions, relationship blocks, disconnection from sensuality.",
+            "notes": "Suppressed emotions, relationship blocks, disconnection from sexuality or joy.",
             "remedies": "Womb healing, mirror work, sacral Reiki cleansing."
         },
         "Overactive / Dominant": {
-            "notes": "Emotional dependency, drama loops, or overattachment to people.",
+            "notes": "Emotional dependency, drama loops, or over-attachment to people.",
             "remedies": "Healthy boundaries, creative solitude, self-love affirmations."
         },
     },
     "Solar Plexus (Manipura)": {
         "Balanced / Radiant": {
-            "notes": "Confident, decisive, action-oriented, leadership energy present.",
+            "notes": "Confident, decisive, action oriented, leadership energy present.",
             "remedies": "Citrine work, power pose, gratitude before tasks."
         },
         "Slightly Weak": {
             "notes": "Procrastination, self-doubt or low motivation.",
-            "remedies": "Breath of fire, success journaling, ‘My power is safe’ affirmations."
+            "remedies": "Breath of fire, success journaling, 'My power is safe' affirmations."
         },
         "Blocked / Underactive": {
             "notes": "People pleasing, indecision, fear of visibility.",
-            "remedies": "Solar breathing, visibility mirror practice, Ho’oponopono for authority."
+            "remedies": "Solar breathing, visibility mirror practice, Ho'oponopono for authority."
         },
         "Overactive / Dominant": {
             "notes": "Overwork, aggression, excessive control or burnout.",
-            "remedies": "Cooling breath, forgiveness practice, balanced diet/rest."
+            "remedies": "Cooling breath, forgiveness practice, balanced diet and rest."
         },
     },
     "Heart (Anahata)": {
@@ -125,12 +125,12 @@ PREDEFINED_INFO = {
             "remedies": "Daily self-hug, forgiveness letters, green color therapy."
         },
         "Blocked / Underactive": {
-            "notes": "Grief, heartbreak, resentment, rejection/love wound.",
-            "remedies": "Heart Reiki healing, rose quartz meditation, 108x Ho’oponopono."
+            "notes": "Grief, heartbreak, resentment, rejection or love wound.",
+            "remedies": "Heart Reiki healing, rose quartz meditation, 108x Ho'oponopono."
         },
         "Overactive / Dominant": {
-            "notes": "Overgiving, martyr patterns, guilty after saying no.",
-            "remedies": "Receiving practice, boundaries, ‘I deserve to receive’ affirmations."
+            "notes": "Overgiving, martyr patterns, guilt after saying no.",
+            "remedies": "Receiving practice, boundaries, 'I deserve to receive' affirmations."
         },
     },
     "Throat (Vishuddha)": {
@@ -140,11 +140,11 @@ PREDEFINED_INFO = {
         },
         "Slightly Weak": {
             "notes": "Hesitation to speak, fear of judgment in small doses.",
-            "remedies": "Mirror talk, ‘My voice matters’, short reels/talks daily."
+            "remedies": "Mirror talk, 'My voice matters', short daily voice practice."
         },
         "Blocked / Underactive": {
             "notes": "Unspoken truth, throat tightness, holding back feelings.",
-            "remedies": "Singing therapy, public speaking, release withheld emotions."
+            "remedies": "Singing therapy, public speaking, gradual emotional expression."
         },
         "Overactive / Dominant": {
             "notes": "Talking too much, dominating discussions, or gossip.",
@@ -161,8 +161,8 @@ PREDEFINED_INFO = {
             "remedies": "Third eye breathing, lavender oil, screen-time detox."
         },
         "Blocked / Underactive": {
-            "notes": "Overthinking, self-doubt, feeling ‘I can’t see my path’.",
-            "remedies": "Trust practice, candle gazing, Ho’oponopono for clarity."
+            "notes": "Overthinking, self-doubt, feeling 'I cannot see my path'.",
+            "remedies": "Trust practice, candle gazing, Ho'oponopono for clarity."
         },
         "Overactive / Dominant": {
             "notes": "Too many ideas, mental exhaustion, not grounded.",
@@ -172,78 +172,74 @@ PREDEFINED_INFO = {
     "Crown (Sahasrara)": {
         "Balanced / Radiant": {
             "notes": "Spiritually connected, peaceful, intuitive downloads.",
-            "remedies": "Silence meditation, gratitude, seva/service."
+            "remedies": "Silence meditation, gratitude, service based actions."
         },
         "Slightly Weak": {
-            "notes": "Sometimes disconnected or doubting divine timing.",
-            "remedies": "Crown breathing, ‘I am one with the Divine’, white light meditation."
+            "notes": "Sometimes feeling disconnected or doubting divine timing.",
+            "remedies": "Crown breathing, 'I am one with the Divine', white light meditation."
         },
         "Blocked / Underactive": {
             "notes": "Loss of purpose, spiritual fatigue, dryness in prayer.",
             "remedies": "Prayer, gratitude journaling, grounding spiritual rituals."
         },
         "Overactive / Dominant": {
-            "notes": "Too much in upper chakras, not in body, not in routine.",
-            "remedies": "Earthing, grounding meals, physical exercise + selenite cleanse."
+            "notes": "Too much in upper chakras, not grounded in routine.",
+            "remedies": "Earthing, grounding meals, physical exercise plus selenite cleanse."
         },
     },
 }
 
 # ---------------------------------------------------------
-# CRYSTAL REMEDIES + LINKS
-# pulled / derived from myaurabliss.com categories
+# CRYSTAL REMEDIES + LINKS (myaurabliss.com)
 # ---------------------------------------------------------
 CRYSTAL_REMEDIES = {
     "Root (Muladhara)": {
-        "Balanced / Radiant": "Red Jasper / Lava Rock / Sulemani Hakik bracelet. Visit: https://myaurabliss.com/product-category/chakra/root-chakra/",
+        "Balanced / Radiant": "Red Jasper, Lava Rock, Sulemani Hakik bracelet. Visit: https://myaurabliss.com/product-category/chakra/root-chakra/",
         "Slightly Weak": "Black Tourmaline, Hematite, Grounding combo. Visit: https://myaurabliss.com/product-category/chakra/root-chakra/",
-        "Blocked / Underactive": "Obsidian, Red Jasper wand, 7 Chakra Strand. Visit: https://myaurabliss.com/product/lava-rock-7-chakra-strand-bracelet/",
-        "Overactive / Dominant": "Smoky Quartz + Hematite to balance fire. Visit: https://myaurabliss.com/product-category/chakra/root-chakra/",
+        "Blocked / Underactive": "Obsidian, Red Jasper wand, 7 Chakra strand bracelet. Visit: https://myaurabliss.com/product/lava-rock-7-chakra-strand-bracelet/",
+        "Overactive / Dominant": "Smoky Quartz and Hematite to balance fire. Visit: https://myaurabliss.com/product-category/chakra/root-chakra/",
     },
     "Sacral (Svadhisthana)": {
-        "Balanced / Radiant": "Carnelian / Peach Moonstone / Orange calcite set. Visit: https://myaurabliss.com/product-category/chakra/sacral-chakra/",
-        "Slightly Weak": "Carnelian bracelet + Sunstone. Visit: https://myaurabliss.com/product-category/chakra/sacral-chakra/",
-        "Blocked / Underactive": "Peach Moonstone on womb + Rose Quartz. Visit: https://myaurabliss.com/product-category/chakra/sacral-chakra/",
-        "Overactive / Dominant": "Moonstone + Amethyst to cool emotions. Visit: https://myaurabliss.com/product-category/chakra/sacral-chakra/",
+        "Balanced / Radiant": "Carnelian, Peach Moonstone, Orange calcite set. Visit: https://myaurabliss.com/product-category/chakra/sacral-chakra/",
+        "Slightly Weak": "Carnelian bracelet and Sunstone. Visit: https://myaurabliss.com/product-category/chakra/sacral-chakra/",
+        "Blocked / Underactive": "Peach Moonstone on womb and Rose Quartz. Visit: https://myaurabliss.com/product-category/chakra/sacral-chakra/",
+        "Overactive / Dominant": "Moonstone and Amethyst to cool emotions. Visit: https://myaurabliss.com/product-category/chakra/sacral-chakra/",
     },
     "Solar Plexus (Manipura)": {
-        "Balanced / Radiant": "Citrine / Tiger Eye / 7 Chakra bracelet. Visit: https://myaurabliss.com/product/natural-citrine-bracelet/",
-        "Slightly Weak": "Citrine tumble + Pyrite money stone. Visit: https://myaurabliss.com/product-category/chakra/solar-plexus-chakra/",
+        "Balanced / Radiant": "Citrine, Tiger Eye, 7 Chakra bracelet. Visit: https://myaurabliss.com/product/natural-citrine-bracelet/",
+        "Slightly Weak": "Citrine tumble and Pyrite stone. Visit: https://myaurabliss.com/product-category/chakra/solar-plexus-chakra/",
         "Blocked / Underactive": "Golden calcite, Tiger eye, manifestation kit. Visit: https://myaurabliss.com/product-category/chakra/solar-plexus-chakra/",
-        "Overactive / Dominant": "Yellow calcite + Lepidolite to soften control. Visit: https://myaurabliss.com/product-category/chakra/solar-plexus-chakra/",
+        "Overactive / Dominant": "Yellow calcite and Lepidolite to soften control. Visit: https://myaurabliss.com/product-category/chakra/solar-plexus-chakra/",
     },
     "Heart (Anahata)": {
-        "Balanced / Radiant": "Rose Quartz Heart, Green Aventurine, Rhodonite. Visit: https://myaurabliss.com/product-category/chakra/heart-chakra/",
+        "Balanced / Radiant": "Rose Quartz heart, Green Aventurine, Rhodonite. Visit: https://myaurabliss.com/product-category/chakra/heart-chakra/",
         "Slightly Weak": "Rose Quartz bracelet, Prehnite, Green jade. Visit: https://myaurabliss.com/product-category/chakra/heart-chakra/",
         "Blocked / Underactive": "Malachite, Rhodochrosite, Rose Quartz love kit. Visit: https://myaurabliss.com/product-category/chakra/heart-chakra/",
         "Overactive / Dominant": "Pink Opal, Mangano calcite, Amethyst to calm. Visit: https://myaurabliss.com/product-category/chakra/heart-chakra/",
     },
     "Throat (Vishuddha)": {
-        "Balanced / Radiant": "Blue Lace Agate / Aquamarine / Angelite. Visit: https://myaurabliss.com/product-category/chakra/throat-chakra/",
-        "Slightly Weak": "Sodalite + Amazonite. Visit: https://myaurabliss.com/product-category/chakra/throat-chakra/",
-        "Blocked / Underactive": "Lapis Lazuli tower + Aquamarine pendant. Visit: https://myaurabliss.com/product-category/chakra/throat-chakra/",
-        "Overactive / Dominant": "Celestite / Blue calcite (cooling). Visit: https://myaurabliss.com/product-category/chakra/throat-chakra/",
+        "Balanced / Radiant": "Blue Lace Agate, Aquamarine, Angelite. Visit: https://myaurabliss.com/product-category/chakra/throat-chakra/",
+        "Slightly Weak": "Sodalite and Amazonite. Visit: https://myaurabliss.com/product-category/chakra/throat-chakra/",
+        "Blocked / Underactive": "Lapis Lazuli tower, Aquamarine pendant. Visit: https://myaurabliss.com/product-category/chakra/throat-chakra/",
+        "Overactive / Dominant": "Celestite and Blue calcite to cool. Visit: https://myaurabliss.com/product-category/chakra/throat-chakra/",
     },
     "Third Eye (Ajna)": {
-        "Balanced / Radiant": "Amethyst cluster / Lapis Lazuli. Visit: https://myaurabliss.com/product-category/chakra/third-eye-chakra/",
+        "Balanced / Radiant": "Amethyst cluster and Lapis Lazuli. Visit: https://myaurabliss.com/product-category/chakra/third-eye-chakra/",
         "Slightly Weak": "Fluorite tower, Labradorite. Visit: https://myaurabliss.com/product-category/chakra/third-eye-chakra/",
         "Blocked / Underactive": "Chevron Amethyst, Sodalite, Indigo gabbro. Visit: https://myaurabliss.com/product-category/chakra/third-eye-chakra/",
-        "Overactive / Dominant": "Black Obsidian + Amethyst to ground. Visit: https://myaurabliss.com/product-category/chakra/third-eye-chakra/",
+        "Overactive / Dominant": "Black Obsidian and Amethyst to ground. Visit: https://myaurabliss.com/product-category/chakra/third-eye-chakra/",
     },
     "Crown (Sahasrara)": {
         "Balanced / Radiant": "Clear Quartz, Selenite wand, 7 Chakra mala. Visit: https://myaurabliss.com/product-category/chakra/crown-chakra/",
         "Slightly Weak": "Selenite bowl, Angel aura quartz. Visit: https://myaurabliss.com/product-category/chakra/crown-chakra/",
         "Blocked / Underactive": "Clear Quartz point on crown. Visit: https://myaurabliss.com/product-category/chakra/crown-chakra/",
-        "Overactive / Dominant": "Smoky Quartz + Selenite to balance. Visit: https://myaurabliss.com/product-category/chakra/crown-chakra/",
+        "Overactive / Dominant": "Smoky Quartz and Selenite to balance. Visit: https://myaurabliss.com/product-category/chakra/crown-chakra/",
     },
 }
 
 # ---------------------------------------------------------
-# UTILITIES
+# DOWNLOAD LOGO
 # ---------------------------------------------------------
-def clean_txt(text: str) -> str:
-    return re.sub(r"[^\x00-\x7F]", "", text or "")
-
 def download_logo():
     if not os.path.exists(LOGO_FILE):
         try:
@@ -255,16 +251,9 @@ def download_logo():
             pass
 
 # ---------------------------------------------------------
-# EMAIL SENDER (dummy – fill secrets to make it live)
+# EMAIL SENDER
 # ---------------------------------------------------------
 def send_email_with_pdf(to_email: str, subject: str, body: str, pdf_bytes: bytes, filename: str):
-    """
-    To make this work on Streamlit Cloud:
-    - add to .streamlit/secrets.toml:
-      email_user="your@gmail.com"
-      email_pass="your-app-password"
-    - then this will send from that account.
-    """
     try:
         email_user = st.secrets["email_user"]
         email_pass = st.secrets["email_pass"]
@@ -285,7 +274,7 @@ def send_email_with_pdf(to_email: str, subject: str, body: str, pdf_bytes: bytes
         smtp.send_message(msg)
 
 # ---------------------------------------------------------
-# PDF CREATOR
+# PDF CREATOR (all strings passed through clean_txt)
 # ---------------------------------------------------------
 def make_pdf(data):
     download_logo()
@@ -305,54 +294,56 @@ def make_pdf(data):
     pdf.set_xy(30, 4)
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 7, "Soulful Academy", ln=True)
+    pdf.cell(0, 7, clean_txt("Soulful Academy"), ln=True)
     pdf.set_font("Arial", "", 10)
-    pdf.cell(0, 6, "Chakra + Crystal Healing Report", ln=True)
+    pdf.cell(0, 6, clean_txt("Chakra + Crystal Healing Report"), ln=True)
 
     # client details
     pdf.ln(15)
     pdf.set_text_color(0, 0, 0)
     pdf.set_font("Arial", "B", 12)
-    pdf.cell(0, 6, f"Client Name: {data['client_name']}", ln=True)
-    pdf.cell(0, 6, f"Gender: {data['gender']}", ln=True)
-    pdf.cell(0, 6, f"Date: {data['date']}", ln=True)
-    pdf.cell(0, 6, f"Coach: {data['coach_name']}", ln=True)
-    pdf.cell(0, 6, f"Intent: {data['goal']}", ln=True)
+    pdf.cell(0, 6, clean_txt(f"Client Name: {data['client_name']}"), ln=True)
+    pdf.cell(0, 6, clean_txt(f"Gender: {data['gender']}"), ln=True)
+    pdf.cell(0, 6, clean_txt(f"Date: {data['date']}"), ln=True)
+    pdf.cell(0, 6, clean_txt(f"Coach: {data['coach_name']}"), ln=True)
+    pdf.cell(0, 6, clean_txt(f"Intent: {data['goal']}"), ln=True)
 
     pdf.ln(4)
     pdf.set_font("Arial", "B", 12)
-    pdf.cell(0, 6, "Chakra Analysis", ln=True)
+    pdf.cell(0, 6, clean_txt("Chakra Analysis"), ln=True)
 
     for ch, info in data["chakras"].items():
         pdf.ln(2)
         pdf.set_font("Arial", "B", 11)
-        pdf.cell(0, 6, ch, ln=True)
+        pdf.cell(0, 6, clean_txt(ch), ln=True)
         pdf.set_font("Arial", "", 10)
-        pdf.cell(0, 5, f"Status: {info['status']}", ln=True)
-        pdf.multi_cell(0, 5, f"Notes / Symptoms: {clean_txt(info['notes'])}")
-        pdf.multi_cell(0, 5, f"Healing Remedies: {clean_txt(info['remedies'])}")
+        pdf.cell(0, 5, clean_txt(f"Status: {info['status']}"), ln=True)
+        pdf.multi_cell(0, 5, clean_txt(f"Notes / Symptoms: {info['notes']}"))
+        pdf.multi_cell(0, 5, clean_txt(f"Healing Remedies: {info['remedies']}"))
         pdf.set_font("Arial", "I", 9)
-        pdf.multi_cell(0, 5, f"Crystal Remedies: {clean_txt(info['crystals'])}")
+        pdf.multi_cell(0, 5, clean_txt(f"Crystal Remedies: {info['crystals']}"))
 
     pdf.ln(5)
     pdf.set_font("Arial", "B", 12)
-    pdf.cell(0, 6, "Follow-up Plan", ln=True)
+    pdf.cell(0, 6, clean_txt("Follow-up Plan"), ln=True)
     pdf.set_font("Arial", "", 10)
-    pdf.multi_cell(0, 5, data["follow_up"])
+    pdf.multi_cell(0, 5, clean_txt(data["follow_up"]))
 
     pdf.ln(3)
     pdf.set_font("Arial", "B", 12)
-    pdf.cell(0, 6, "Affirmations", ln=True)
+    pdf.cell(0, 6, clean_txt("Affirmations"), ln=True)
     pdf.set_font("Arial", "", 10)
-    pdf.multi_cell(0, 5, data["affirmations"])
+    pdf.multi_cell(0, 5, clean_txt(data["affirmations"]))
 
     pdf.ln(3)
     pdf.set_font("Arial", "I", 8)
-    pdf.multi_cell(0, 4, "Generated by Soulful Academy | What You Seek is Seeking You.")
+    pdf.multi_cell(0, 4, clean_txt("Generated by Soulful Academy | What You Seek is Seeking You."))
+
+    # return bytes
     return pdf.output(dest="S").encode("latin-1", "ignore")
 
 # ---------------------------------------------------------
-# UI (REACTIVE – no form, so dropdown updates fields immediately)
+# UI (REACTIVE)
 # ---------------------------------------------------------
 st.image(LOGO_URL, width=160)
 st.title("Soulful Academy Chakra + Crystal Scanning Template")
@@ -370,7 +361,7 @@ gender = st.radio("Gender", ["Female", "Male", "Other"], horizontal=True)
 goal = st.text_input("Client Intent / Focus", "Relationship Healing")
 
 st.markdown("---")
-st.subheader("Chakra Observations")
+st.subheader("Chakra Observations (auto-fills for each status)")
 
 chakra_data = {}
 
@@ -389,17 +380,16 @@ for ch in CHAKRAS:
         if prev_status_key not in st.session_state:
             st.session_state[prev_status_key] = st.session_state[status_key]
 
-        # status selector
         status = st.selectbox(f"Energy Status – {ch}", STATUS_OPTIONS, key=status_key)
 
-        # if status changed, refresh notes/remedies/crystals
+        # detect change
         if st.session_state[prev_status_key] != status:
             st.session_state[notes_key] = PREDEFINED_INFO.get(ch, {}).get(status, {}).get("notes", "")
             st.session_state[remedies_key] = PREDEFINED_INFO.get(ch, {}).get(status, {}).get("remedies", "")
             st.session_state[crystals_key] = CRYSTAL_REMEDIES.get(ch, {}).get(status, "")
             st.session_state[prev_status_key] = status
 
-        # ensure keys exist
+        # ensure values exist
         if notes_key not in st.session_state:
             st.session_state[notes_key] = PREDEFINED_INFO.get(ch, {}).get(status, {}).get("notes", "")
         if remedies_key not in st.session_state:
@@ -411,10 +401,13 @@ for ch in CHAKRAS:
         remedies = st.text_area(f"Remedies – {ch}", value=st.session_state[remedies_key], key=remedies_key)
         crystals = st.text_area(f"Crystal Remedies – {ch}", value=st.session_state[crystals_key], key=crystals_key)
 
-        # quick link to shop
-        link = CHAKRA_LINKS.get(ch)
+        # quick link
+        link = CRYSTAL_REMEDIES.get(ch, {}).get(status, "")
         if link:
-            st.markdown(f"[Visit {ch} products on MyAuraBliss]({link})")
+            # we already included link inside text, but this is a neat clickable one
+            cat_link = link.split("Visit:")[-1].strip() if "Visit:" in link else ""
+            if cat_link:
+                st.markdown(f"[Open {ch} crystals on MyAuraBliss]({cat_link})")
 
         chakra_data[ch] = {
             "status": status,
@@ -425,20 +418,18 @@ for ch in CHAKRAS:
 
 st.markdown("---")
 st.subheader("Session Summary")
-follow_up = st.text_area("Follow-up Plan", "Follow-up in 7 days. Practice chakra meditation, wear the suggested crystal bracelet from MyAuraBliss, and do 108x Ho’oponopono.")
-affirmations = st.text_area("Affirmations",
-                            "I am safe. I allow emotions. My power is safe. My heart is open. "
-                            "I express my truth. I trust my guidance. I am connected to the Divine.")
+follow_up = st.text_area("Follow-up Plan", "Follow-up in 7 days. Practice chakra meditation, wear the crystal bracelet from MyAuraBliss, and do 108x Ho'oponopono on the main person or event.")
+affirmations = st.text_area("Affirmations", "I am safe. I receive. My power is safe. My heart is open. I speak my truth. I trust my guidance. I am connected to the Divine.")
 
 st.markdown("---")
 st.subheader("Download / Email")
 
 col_a, col_b = st.columns(2)
 with col_a:
-    generate_pdf = st.button("💜 Create & Download PDF", use_container_width=True)
+    generate_pdf = st.button("Create & Download PDF", use_container_width=True)
 with col_b:
     email_to = st.text_input("Send report to email", "")
-    send_email_btn = st.button("📩 Send PDF to email", use_container_width=True)
+    send_email_btn = st.button("Send PDF to Email", use_container_width=True)
 
 if generate_pdf or send_email_btn:
     if not client_name:
@@ -457,7 +448,7 @@ if generate_pdf or send_email_btn:
         pdf_bytes = make_pdf(payload)
 
         if generate_pdf:
-            st.success("PDF ready. Download below 👇")
+            st.success("PDF ready. Download below.")
             st.download_button(
                 label="Download Chakra + Crystal Report (PDF)",
                 data=pdf_bytes,
@@ -472,8 +463,8 @@ if generate_pdf or send_email_btn:
                 send_email_with_pdf(
                     to_email=email_to,
                     subject=f"Chakra + Crystal Report for {client_name}",
-                    body="Your Soulful Academy report is attached. Love, Rekha 💜",
+                    body="Your Soulful Academy report is attached.",
                     pdf_bytes=pdf_bytes,
                     filename=f"{client_name}_chakra_crystal_report.pdf"
                 )
-                st.success("If email credentials are set in secrets, the report has been sent ✅")
+                st.success("If email credentials are set in Streamlit secrets, the report has been sent.")
