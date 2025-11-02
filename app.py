@@ -38,7 +38,7 @@ STATUS_OPTIONS = [
 ]
 
 # ---------------------------------------------------------
-# PREDEFINED NOTES AND REMEDIES
+# PREDEFINED NOTES / REMEDIES (same as before)
 # ---------------------------------------------------------
 PREDEFINED_INFO = {
     "Root (Muladhara)": {
@@ -170,6 +170,55 @@ PREDEFINED_INFO = {
 }
 
 # ---------------------------------------------------------
+# CRYSTAL REMEDIES (built to match your store style)
+# You can rename to EXACT product names in myaurabliss.com
+# ---------------------------------------------------------
+CRYSTAL_REMEDIES = {
+    "Root (Muladhara)": {
+        "Balanced / Radiant": "Red Jasper Tumble • 7-Chakra Mala (Grounding) • Smoky Quartz – keep near feet. (myaurabliss.com root chakra collection) :contentReference[oaicite:1]{index=1}",
+        "Slightly Weak": "Black Tourmaline Protection Stone • Hematite Bracelet • Red Jasper Angel for stability. :contentReference[oaicite:2]{index=2}",
+        "Blocked / Underactive": "Red Jasper Wand on root • Black Obsidian near door • Grounding Kit (Root).",
+        "Overactive / Dominant": "Smoky Quartz for excess fire • Hematite for balance • 7-Chakra Mala for harmonising."
+    },
+    "Sacral (Svadhisthana)": {
+        "Balanced / Radiant": "Carnelian Palm Stone • Peach Moonstone • Orange Calcite (joy & creativity).",
+        "Slightly Weak": "Carnelian Bracelet • Sunstone • Sacral Crystal Set (for emotional flow).",
+        "Blocked / Underactive": "Peach Moonstone on womb • Carnelian tower • Rose Quartz to soothe guilt.",
+        "Overactive / Dominant": "Moonstone for emotional balance • Pink Calcite • Amethyst to cool sacral."
+    },
+    "Solar Plexus (Manipura)": {
+        "Balanced / Radiant": "Citrine Point • Tiger Eye Bracelet • 7 Chakra Mala (power activation).",
+        "Slightly Weak": "Citrine tumble in pocket • Pyrite Money Stone • Yellow Aventurine.",
+        "Blocked / Underactive": "Golden Calcite • Tiger Eye for confidence • Manifestation Citrine Kit.",
+        "Overactive / Dominant": "Yellow Calcite (soften control) • Lepidolite for stress • Honey Calcite."
+    },
+    "Heart (Anahata)": {
+        "Balanced / Radiant": "Rose Quartz Heart • Green Aventurine • Rhodonite for compassion. :contentReference[oaicite:3]{index=3}",
+        "Slightly Weak": "Rose Quartz Bracelet • Prehnite with Epidote • Green Jade.",
+        "Blocked / Underactive": "Rose Quartz Crystal Heart (self-love) • Rhodochrosite • Malachite for deep release.",
+        "Overactive / Dominant": "Pink Opal • Mangano Calcite • Amethyst to calm overgiving."
+    },
+    "Throat (Vishuddha)": {
+        "Balanced / Radiant": "Blue Lace Agate • Aquamarine • Angelite.",
+        "Slightly Weak": "Sodalite • Amazonite • 7-Chakra Mala (speak truth).",
+        "Blocked / Underactive": "Blue Apatite • Lapis Lazuli tower • Aquamarine pendant for expression.",
+        "Overactive / Dominant": "Celestite • Angelite • Blue Calcite (to cool sharp speech)."
+    },
+    "Third Eye (Ajna)": {
+        "Balanced / Radiant": "Amethyst Cluster • Lapis Lazuli • Iolite for intuition.",
+        "Slightly Weak": "Amethyst Tumble • Fluorite Tower • Labradorite.",
+        "Blocked / Underactive": "Indigo Gabbro • Chevron Amethyst • Sodalite for mental clarity.",
+        "Overactive / Dominant": "Black Obsidian + Amethyst combo to ground visions."
+    },
+    "Crown (Sahasrara)": {
+        "Balanced / Radiant": "Clear Quartz Generator • Selenite Wand • 7 Chakra Mala (higher connection).",
+        "Slightly Weak": "Selenite Bowl • Amethyst Cluster • Angel Aura Quartz.",
+        "Blocked / Underactive": "Clear Quartz Point on crown • Selenite charging plate • Lotus Crystal.",
+        "Overactive / Dominant": "Smoky Quartz + Selenite combo • Hematite to ground."
+    },
+}
+
+# ---------------------------------------------------------
 # UTILITIES
 # ---------------------------------------------------------
 def clean_txt(text):
@@ -194,13 +243,12 @@ def make_pdf(data):
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=12)
 
-    # header bar
+    # header
     pdf.set_fill_color(139, 92, 246)
     pdf.rect(0, 0, 210, 18, "F")
     pdf.set_fill_color(236, 72, 153)
     pdf.rect(0, 18, 6, 275, "F")
 
-    # logo
     if os.path.exists(LOGO_FILE):
         pdf.image(LOGO_FILE, x=10, y=2, w=16)
 
@@ -209,13 +257,14 @@ def make_pdf(data):
     pdf.set_font("Arial", "B", 14)
     pdf.cell(0, 7, "Soulful Academy", ln=True)
     pdf.set_font("Arial", "", 10)
-    pdf.cell(0, 6, "Professional Chakra Scan Report", ln=True)
+    pdf.cell(0, 6, "Professional Chakra + Crystal Report", ln=True)
 
     pdf.ln(15)
     pdf.set_text_color(0, 0, 0)
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 6, f"Client Name: {data['client_name']}", ln=True)
-    pdf.cell(0, 6, f"Session Date: {data['date']}", ln=True)
+    pdf.cell(0, 6, f"Gender: {data['gender']}", ln=True)
+    pdf.cell(0, 6, f"Date: {data['date']}", ln=True)
     pdf.cell(0, 6, f"Coach: {data['coach_name']}", ln=True)
     pdf.cell(0, 6, f"Intent: {data['goal']}", ln=True)
 
@@ -223,14 +272,18 @@ def make_pdf(data):
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 6, "Chakra Analysis", ln=True)
     pdf.set_font("Arial", "", 10)
+
     for ch, info in data["chakras"].items():
         pdf.ln(2)
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 6, ch, ln=True)
         pdf.set_font("Arial", "", 10)
         pdf.cell(0, 5, f"Status: {info['status']}", ln=True)
-        pdf.multi_cell(0, 5, f"Notes: {clean_txt(info['notes'])}")
+        pdf.multi_cell(0, 5, f"Notes / Symptoms: {clean_txt(info['notes'])}")
         pdf.multi_cell(0, 5, f"Remedies: {clean_txt(info['remedies'])}")
+        # crystals added
+        pdf.set_font("Arial", "I", 9)
+        pdf.multi_cell(0, 5, f"Crystal Remedies (myaurabliss.com): {clean_txt(info.get('crystals',''))}")
 
     pdf.ln(5)
     pdf.set_font("Arial", "B", 12)
@@ -253,7 +306,7 @@ def make_pdf(data):
 # FORM UI
 # ---------------------------------------------------------
 st.image(LOGO_URL, width=160)
-st.title("Chakra Scanning Template (Coach Mode)")
+st.title("Soulful Academy Chakra + Crystal Scanning Template")
 
 with st.form("chakra_form"):
     c1, c2 = st.columns(2)
@@ -262,25 +315,55 @@ with st.form("chakra_form"):
         coach_name = st.text_input("Coach / Healer Name", "Rekha Babulkar")
     with c2:
         date_val = st.text_input("Session Date", datetime.date.today().strftime("%d-%m-%Y"))
+        gender = st.selectbox("Gender", ["Female", "Male", "Other"])
         goal = st.text_input("Client Intent / Focus", "Relationship Healing")
 
     st.markdown("---")
-    st.subheader("Chakra Observations")
+    st.subheader("Chakra Observations (auto-fills Notes, Remedies, Crystals)")
 
     chakra_data = {}
     for ch in CHAKRAS:
         with st.expander(ch, expanded=(ch == "Root (Muladhara)")):
-            status = st.selectbox(f"Energy Status – {ch}", STATUS_OPTIONS, key=f"status_{ch}")
+            status_key = f"status_{ch}"
+            notes_key = f"notes_{ch}"
+            remedies_key = f"rem_{ch}"
+            crystals_key = f"crys_{ch}"
+
+            status = st.selectbox(f"Energy Status – {ch}", STATUS_OPTIONS, key=status_key)
+
+            # Dynamic auto-fill from PREDEFINED + CRYSTALS
             pre_notes = PREDEFINED_INFO.get(ch, {}).get(status, {}).get("notes", "")
             pre_remedies = PREDEFINED_INFO.get(ch, {}).get(status, {}).get("remedies", "")
-            notes = st.text_area(f"Notes / Symptoms – {ch}", value=pre_notes, key=f"notes_{ch}")
-            remedies = st.text_area(f"Remedies – {ch}", value=pre_remedies, key=f"rem_{ch}")
-            chakra_data[ch] = {"status": status, "notes": notes, "remedies": remedies}
+            pre_crystals = CRYSTAL_REMEDIES.get(ch, {}).get(status, "")
+
+            # update session so that UI refresh still shows latest
+            st.session_state[notes_key] = pre_notes
+            st.session_state[remedies_key] = pre_remedies
+            st.session_state[crystals_key] = pre_crystals
+
+            notes = st.text_area(f"Notes / Symptoms – {ch}",
+                                 value=st.session_state[notes_key],
+                                 key=notes_key)
+
+            remedies = st.text_area(f"Remedies – {ch}",
+                                    value=st.session_state[remedies_key],
+                                    key=remedies_key)
+
+            crystals = st.text_area(f"Crystal Remedies – {ch}  (from myaurabliss.com)",
+                                    value=st.session_state[crystals_key],
+                                    key=crystals_key)
+
+            chakra_data[ch] = {
+                "status": status,
+                "notes": notes,
+                "remedies": remedies,
+                "crystals": crystals,
+            }
 
     st.markdown("---")
     st.subheader("Session Summary")
-    follow_up = st.text_area("Follow-up Plan", "Follow-up in 7 days. Practice chakra meditation and affirmations.")
-    affirmations = st.text_area("Affirmations", 
+    follow_up = st.text_area("Follow-up Plan", "Follow-up in 7 days. Practice chakra meditation, wear recommended crystal, and do 108x Ho’oponopono on main person/event.")
+    affirmations = st.text_area("Affirmations",
                                 "I am safe. I allow emotions. My power is safe. My heart is open. "
                                 "I express my truth. I trust my guidance. I am connected to the Divine.")
 
@@ -292,6 +375,7 @@ if submitted:
     else:
         payload = {
             "client_name": client_name,
+            "gender": gender,
             "coach_name": coach_name,
             "date": date_val,
             "goal": goal,
@@ -302,9 +386,9 @@ if submitted:
         pdf_bytes = make_pdf(payload)
         st.success("Report created successfully. Download below.")
         st.download_button(
-            label="Download Chakra Report (PDF)",
+            label="Download Chakra + Crystal Report (PDF)",
             data=pdf_bytes,
-            file_name=f"{client_name}_chakra_report.pdf",
+            file_name=f"{client_name}_chakra_crystal_report.pdf",
             mime="application/pdf",
             use_container_width=True
         )
